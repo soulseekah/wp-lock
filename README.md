@@ -2,7 +2,9 @@
 
 ## because WordPress is not thread-safe
 
-This is, what hopes to be a part of WordPress Core someday.
+[![Build Status](https://travis-ci.org/soulseekah/wp-lock.svg?branch=develop)](https://travis-ci.org/soulseekah/wp-lock)
+
+WordPres is no longer just a blogging platform. It's a framework. And like all mature frameworks it drastically needs a lock API.
 
 ## Example
 
