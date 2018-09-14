@@ -4,7 +4,7 @@
 
 [![Build Status](https://travis-ci.org/soulseekah/wp-lock.svg?branch=develop)](https://travis-ci.org/soulseekah/wp-lock)
 
-WordPres is no longer just a blogging platform. It's a framework. And like all mature frameworks it drastically needs a lock API.
+WordPress is no longer just a blogging platform. It's a framework. And like all mature frameworks it drastically needs a lock API.
 
 ## Example
 
@@ -16,7 +16,7 @@ public function topup_user_balance( $user_id, $topup ) {
 	$balance = get_user_meta( $user_id, 'balance', true );
 	$balance = $balance + $topup;
 	update_user_meta( $user_id, 'balance', $balance = get_user_meta( $user_id, 'balance', true ) + $topup );
-	return $balace;
+	return $balance;
 }
 ```
 
