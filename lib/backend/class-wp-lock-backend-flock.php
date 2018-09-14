@@ -19,9 +19,9 @@ class WP_Lock_Backend_flock implements WP_Lock_Backend {
 	private $prefix;
 
 	/**
-	 * @var string The held locks.
+	 * @var resource The file descriptor held by this lock backend.
 	 */
-	private $locks = array();
+	private $fd = null;
 
 	/**
 	 * Lock backend constructor.
@@ -49,89 +49,41 @@ class WP_Lock_Backend_flock implements WP_Lock_Backend {
 			$blocking = 0;
 		}
 
+		/**
+		 * This file descriptor is being used already.
+		 */
+		if ( $this->fd ) {
+			return false;
+		}
+
 		switch ( $level ) {
 			case WP_Lock::READ:
 				/**
-				 * Is the current resource being exclusively held?
+				 * While writing nobody can read.
 				 */
-				$fd = fopen( $this->get_path_for_id( $id ) . '.x', 'r' );
-				flock( $fd, $blocking | LOCK_EX, $wouldblock );
-				if ( $blocking == LOCK_NB && $wouldblock ) {
-					fclose( $fd );
-					return false;
-				}
-				flock( $fd, LOCK_UN );
-
-				/**
-				 * Is the current resource for write?
-				 */
-				$fd = fopen( $this->get_path_for_id( $id ) . '.x', 'r' );
-				flock( $fd, $blocking | LOCK_EX, $wouldblock );
-				if ( $blocking == LOCK_NB && $wouldblock ) {
-					fclose( $fd );
-					return false;
-				}
-				flock( $fd, LOCK_UN );
-
-				/**
-				 * Is the current resource being held for writing?
-				 */
-				$fd = fopen( $this->get_path_for_id( $id ) . '.r', 'r' );
+				$fd = fopen( $this->get_path_for_id( $id ), 'w' );
 				flock( $fd, $blocking | LOCK_SH, $wouldblock );
 				if ( $blocking == LOCK_NB && $wouldblock ) {
 					fclose( $fd );
 					return false;
 				}
-
-				break;
 			case WP_Lock::WRITE:
 				/**
-				 * Is the current resource being exclusively held?
+				 * While reading or writing nobody can write.
 				 */
-				$fd = fopen( $this->get_path_for_id( $id ) . '.x', 'r' );
+				$fd = fopen( $this->get_path_for_id( $id ), 'w' );
 				flock( $fd, $blocking | LOCK_EX, $wouldblock );
 				if ( $blocking == LOCK_NB && $wouldblock ) {
 					fclose( $fd );
 					return false;
 				}
-				flock( $fd, LOCK_UN );
-
-				/**
-				 * Is the current resource being held for writing?
-				 */
-				$fd = fopen( $this->get_path_for_id( $id ) . '.r', 'r' );
-				flock( $fd, $blocking | LOCK_EX, $wouldblock );
-				if ( $blocking == LOCK_NB && $wouldblock ) {
-					fclose( $fd );
-					return false;
-				}
-
 				break;
-			case WP_Lock::EXCLUSIVE:
-				/**
-				 * Is the current resource being exclusively held?
-				 */
-				$fd = fopen( $this->get_path_for_id( $id ) . '.x', 'r' );
-				flock( $fd, $blocking | LOCK_EX, $wouldblock );
-				if ( $blocking == LOCK_NB && $wouldblock ) {
-					fclose( $fd );
-					return false;
-				}
-
-				/**
-				 * Is the current resource being held by read or write?
-				 */
-				$fd = fopen( $this->get_path_for_id( $id ) . '.r', 'r' );
-				flock( $fd, $blocking | LOCK_EX, $wouldblock );
-				if ( $blocking == LOCK_NB && $wouldblock ) {
-					fclose( $fd );
-					return false;
-				}
-
-				break;
+			default:
+				return false;
 		}
 
-		fclose( $fd );
+		$this->fd = $fd;
+
 		return true;
 	}
 
@@ -139,6 +91,9 @@ class WP_Lock_Backend_flock implements WP_Lock_Backend {
 	 * @inheritDoc
 	 */
 	public function release( $id ) {
+		flock( $this->fd, $blocking | LOCK_UN, $wouldblock );
+		fclose( $this->fd );
+		$this->fd = false;
 	}
 
 	private function get_path_for_id( $id ) {
