@@ -26,7 +26,7 @@ Try to call the above code 100 times in 16 threads. The balance will be less tha
 // A thread-safe version of the above topup function.
 public function topup_user_balance( $user_id, $topup ) {
 	$user_balance_lock = new WP_Lock( "$user_id:meta:balance" );
-	$user_balance_lock->acquire( WP_Lock::EXCLUSIVE );
+	$user_balance_lock->acquire( WP_Lock::WRITE );
 
 	$balance = get_user_meta( $user_id, 'balance', true );
 	$balance = $balance + $topup;
@@ -42,5 +42,5 @@ The above code is thread safe.
 
 ## Lock levels
 
-- `WP_Lock::READ`, `WP_Lock::WRITE` - other processes can acquire READ but not WRITE, EXCLUSIVE until the original lock is released.
-- `WP_Lock::EXCLUSIVE` - other processes can't acquire READ, WRITE, EXCLUSIVE locks until the original lock is released.
+- `WP_Lock::READ` - other processes can acquire READ but not WRITE until the original lock is released. A shared read lock.
+- `WP_Lock::WRITE` (default) - other processes can't acquire READ or WRITE locks until the original lock is released. An exclusive read-write lock

@@ -12,9 +12,8 @@ interface WP_Lock_Backend {
 	 *                             WP_Lock::READ
 	 *                             WP_Lock::WRITE
 	 *                             WP_Lock::EXCLUSIVE
-	 *                         Default: WP_Lock::WRITE
-	 * @param bool $blocking   Whether acquiring the lock blocks or not. Default: true.
-	 * @param int  $expiration Auto-release after $expiration seconds. Default: 0 (no auto-release)
+	 * @param bool $blocking   Whether acquiring the lock blocks or not.
+	 * @param int  $expiration Auto-release after $expiration seconds.
 	 *
 	 * @return bool Whether the lock has been acquired or not.
 	 */

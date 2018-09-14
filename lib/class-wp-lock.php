@@ -5,21 +5,16 @@
 class WP_Lock {
 	/**
 	 * @var int A non-exclusive protected read lock.
-	 * Other processes can read, but not write.
+	 * Other processes can read, but not write. A shared lock.
 	 */
-	const READ      = 0x1;
+	const READ  = 8;
 
 	/**
-	 * @var int An exclusive protected write lock.
-	 * Other processes can read, but not write.
+	 * @var int An exclusive write lock.
+	 * Other processes can neither read, nor write.
 	 */
-	const WRITE     = 0x2;
+	const WRITE = 32;
 
-	/**
-	 * @var int An exclusive protected read/write lock.
-	 * Other processes can neither read nor write.
-	 */
-	const EXCLUSIVE = 0x4;
 
 	/**
 	 * @var string The lock identifier.
@@ -35,7 +30,7 @@ class WP_Lock {
 	 * Create a resource concurrency lock.
 	 *
 	 * @param string          $resource_id  The lock identifier. An arbitrary string.
-	 * @param WP_Lock_Backend $lock_backend The lock storage provider/backend.
+	 * @param WP_Lock_Backend $lock_backend The lock storage provider/backend instance.
 	 */
 	public function __construct( $resource_id, $lock_backend = null ) {
 		$this->id = $resource_id;
@@ -57,7 +52,6 @@ class WP_Lock {
 	 * @param int  $level      Lock level. One of:
 	 *                             WP_Lock::READ
 	 *                             WP_Lock::WRITE
-	 *                             WP_Lock::EXCLUSIVE
 	 *                         Default: WP_Lock::WRITE
 	 * @param bool $blocking   Whether acquiring the lock blocks or not. Default: true.
 	 * @param int  $expiration Auto-release after $expiration seconds. Default: 0 (no auto-release)
