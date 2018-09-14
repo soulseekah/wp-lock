@@ -1,1 +1,4 @@
+vendor
+wordpress-develop
 *.swp
+composer.lock

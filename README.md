@@ -10,7 +10,7 @@ Consider the following user balance topup function that is susceptible to a race
 
 ```php
 // A thread-safe version of the above topup function.
-public function topup_user_balance( $topup ) {
+public function topup_user_balance( $user_id, $topup ) {
 	$balance = get_user_meta( $user_id, 'balance', true );
 	$balance = $balance + $topup;
 	update_user_meta( $user_id, 'balance', $balance = get_user_meta( $user_id, 'balance', true ) + $topup );
@@ -22,7 +22,7 @@ Try to call the above code 100 times in 16 threads. The balance will be less tha
 
 ```php
 // A thread-safe version of the above topup function.
-public function topup_user_balance( $topup ) {
+public function topup_user_balance( $user_id, $topup ) {
 	$user_balance_lock = new WP_Lock( "$user_id:meta:balance" );
 	$user_balance_lock->acquire( WP_Lock::EXCLUSIVE );
 
