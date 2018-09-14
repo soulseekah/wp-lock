@@ -21,4 +21,4 @@ install:
   - php composer.phar install --no-interaction
 
 script:
-  - vendor/bin/phpunit -c phpunit.xml.dist
+  - WP_TESTS_DIR=/tmp/wordpress-tests-lib/ vendor/bin/phpunit -c phpunit.xml.dist
