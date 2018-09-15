@@ -2,7 +2,7 @@
 
 ## because WordPress is not thread-safe
 
-[![Build Status](https://travis-ci.org/soulseekah/wp-lock.svg?branch=develop)](https://travis-ci.org/soulseekah/wp-lock)
+[![Build Status](https://travis-ci.org/soulseekah/wp-lock.svg?branch=master)](https://travis-ci.org/soulseekah/wp-lock)
 
 WordPress is no longer just a blogging platform. It's a framework. And like all mature frameworks it drastically needs a lock API.
 
