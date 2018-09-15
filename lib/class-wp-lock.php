@@ -54,11 +54,14 @@ class WP_Lock {
 	 *                             WP_Lock::WRITE
 	 *                         Default: WP_Lock::WRITE
 	 * @param bool $blocking   Whether acquiring the lock blocks or not. Default: true.
-	 * @param int  $expiration Auto-release after $expiration seconds. Default: 0 (no auto-release)
+	 * @param int  $expiration Auto-release after $expiration seconds. Default: 30
+	 *                         Setting this value to 0 can cause zombie locks that
+	 *                         will linger forever (even across reboots) if you don't
+	 *                         know what you are doing.
 	 *
 	 * @return bool Whether the lock has been acquired or not.
 	 */
-	public function acquire( $level = self::WRITE, $blocking = true, $expiration = 0 ) {
+	public function acquire( $level = self::WRITE, $blocking = true, $expiration = 30 ) {
 		return $this->lock_backend->acquire( $this->id, $level, $blocking, $expiration );
 	}
 

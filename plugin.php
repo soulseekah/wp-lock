@@ -26,7 +26,6 @@ if ( ! class_exists( 'WP_Lock_Backend' ) ) {
 }
 
 foreach ( glob( dirname( __FILE__ ) . '/lib/backend/class-wp-lock-backend-*.php' ) as $backend_class_path ) {
-	var_dump( $backend_class_path );
 	require_once $backend_class_path;
 }
 
