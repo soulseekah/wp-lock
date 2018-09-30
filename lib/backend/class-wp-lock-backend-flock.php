@@ -156,8 +156,6 @@ class WP_Lock_Backend_flock implements WP_Lock_Backend {
 		if ( ! $locks ) {
 			unlink( $path );
 		}
-
-		return true;
 	}
 
 	private function get_path_for_id( $id ) {
