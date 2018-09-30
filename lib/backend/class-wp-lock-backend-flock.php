@@ -42,7 +42,7 @@ class WP_Lock_Backend_flock implements WP_Lock_Backend {
 
 		$fd = fopen( $path = $this->get_path_for_id( $id ), 'a+b' );
 		flock( $fd, $LOCK_NB | LOCK_EX, $wouldblock );
-		if ( $LOCK_NB == LOCK_NB && $wouldblock ) {
+		if ( $wouldblock && $LOCK_NB === LOCK_NB ) {
 			fclose( $fd );
 			return false;
 		}
@@ -54,15 +54,16 @@ class WP_Lock_Backend_flock implements WP_Lock_Backend {
 		/**
 		 * Prune expired locks.
 		 */
-		foreach ( $locks as $id => $lock ) {
+		foreach ( $locks as $i => $lock ) {
 			if ( $lock['expiration'] && ( $lock['expiration'] < microtime( true ) ) ) {
-				unset( $locks[ $id ] );
+				unset( $locks[ $i ] );
 			}
 		}
 
 		ftruncate( $fd, 0 );
 		rewind( $fd );
 		fwrite( $fd, serialize( $locks ) );
+		fflush( $fd );
 
 		switch ( $level ) {
 			case WP_Lock::READ:
@@ -70,16 +71,16 @@ class WP_Lock_Backend_flock implements WP_Lock_Backend {
 				 * While writing nobody can read.
 				 */
 				foreach ( $locks as $lock ) {
-					if ( WP_Lock::WRITE == $lock['level'] ) {
+					if ( WP_Lock::WRITE === $lock['level'] ) {
 						if ( ! $blocking ) {
 							flock( $fd, LOCK_UN );
 							fclose( $fd );
 							return false;
 						}
+						
+						flock( $fd, LOCK_UN );
 
 						while ( true ) { // @todo this is a bad spinlock, try select()
-							flock( $fd, LOCK_UN );
-							fclose( $fd );
 							if ( $this->acquire( $id, $level, false, $expiration ) ) {
 								return true;
 							}
@@ -99,10 +100,11 @@ class WP_Lock_Backend_flock implements WP_Lock_Backend {
 						return false;
 					}
 
+					flock( $fd, LOCK_UN );
+
 					while ( true ) { // @todo this is a bad spinlock, try select()
-						flock( $fd, LOCK_UN );
-						fclose( $fd );
 						if ( $this->acquire( $id, $level, false, $expiration ) ) {
+							fclose( $fd );
 							return true;
 						}
 						usleep( 5000 );
@@ -122,6 +124,7 @@ class WP_Lock_Backend_flock implements WP_Lock_Backend {
 		ftruncate( $fd, 0 );
 		rewind( $fd );
 		fwrite( $fd, serialize( $locks ) );
+		fflush( $fd );
 
 		flock( $fd, LOCK_UN );
 		fclose( $fd );
@@ -132,7 +135,7 @@ class WP_Lock_Backend_flock implements WP_Lock_Backend {
 	 * @inheritDoc
 	 */
 	public function release( $id ) {
-		$fd = fopen( $path = $this->get_path_for_id( $id ), 'r+b' );
+		$fd = fopen( $path = $this->get_path_for_id( $id ), 'a+b' );
 		flock( $fd, LOCK_EX );
 
 		if ( ! $locks = maybe_unserialize( file_get_contents( $path ) ) ) {
@@ -140,7 +143,7 @@ class WP_Lock_Backend_flock implements WP_Lock_Backend {
 		}
 
 		foreach ( $locks as $id => $lock ) {
-			if ( getmypid() == $lock['pid'] ) {
+			if ( getmypid() === $lock['pid'] ) {
 				unset( $locks[ $id ] );
 				break;
 			}
@@ -149,13 +152,10 @@ class WP_Lock_Backend_flock implements WP_Lock_Backend {
 		ftruncate( $fd, 0 );
 		rewind( $fd );
 		fwrite( $fd, serialize( $locks ) );
+		fflush( $fd );
 
 		flock( $fd, LOCK_UN );
 		fclose( $fd );
-
-		if ( ! $locks ) {
-			unlink( $path );
-		}
 	}
 
 	private function get_path_for_id( $id ) {

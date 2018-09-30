@@ -3,6 +3,8 @@ $test_root = getenv( 'WP_TESTS_DIR' ) ? : dirname( __FILE__ ) . '/../wordpress-d
 
 require $test_root . '/includes/functions.php';
 
+require dirname( __FILE__ ) . '/include.php';
+
 function _manually_load_plugin() {
 	require dirname( __FILE__ ) . '/../plugin.php';
 }
