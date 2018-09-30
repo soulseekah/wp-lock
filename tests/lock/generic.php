@@ -129,7 +129,7 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 				array( $resource_id, $lock_backend_class )
 			);
 
-			wp_lock_in_child( array( $callback, 'run' ) );
+			run_in_child( array( $callback, 'run' ) );
 		}
 	}
 
