@@ -109,4 +109,10 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 			$this->assertTrue( $lock_backend_2->acquire( $resource_id, WP_Lock::WRITE, false, 0 ) );
 		}
 	}
+
+	public function test_concurrency() {
+		if ( ! function_exists( 'pcntl_fork' ) ) {
+			$this->markTestSkipped( 'PCNTL not available' );
+		}
+	}
 }
