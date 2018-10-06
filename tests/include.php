@@ -6,7 +6,7 @@ class WP_Lock_Backend_Callback {
 	private $args;
 	private $callback;
 
-	public function __construct( $callback, $args ) {
+	public function __construct( $callback, $args = array() ) {
 		$this->callback = $callback;
 		$this->args = $args;
 	}

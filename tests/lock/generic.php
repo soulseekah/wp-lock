@@ -6,6 +6,7 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 	private function get_lock_backend_classes() {
 		return array(
 			'WP_Lock_Backend_flock',
+//			'WP_Lock_Backend_wpdb',
 		);
 	}
 
