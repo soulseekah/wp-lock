@@ -26,7 +26,7 @@ function run_in_child( $callback ) {
 
 	if ( ! $child = pcntl_fork() ) {
 		$wpdb->db_connect( false );
-		$callback();
+		call_user_func( $callback );
 
 		exit;
 	}
