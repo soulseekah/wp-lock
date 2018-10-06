@@ -125,7 +125,7 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 			$this->assertTrue( $lock_backend->acquire( $resource_id, WP_Lock::WRITE, false, 0 ) );
 
 			$callback = new WP_Lock_Backend_Callback(
-				array( $this, '_test_concurrency_child' ),
+				array( $this, '_test_concurrency_simple_child' ),
 				array( $resource_id, $lock_backend_class )
 			);
 
@@ -160,14 +160,19 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 
 			$children[] = run_in_child( array( $callback, 'run' ) );
 			$children[] = run_in_child( array( $callback, 'run' ) );
+			$children[] = run_in_child( array( $callback, 'run' ) );
+			$children[] = run_in_child( array( $callback, 'run' ) );
+			$children[] = run_in_child( array( $callback, 'run' ) );
 
 			foreach ( range( 1, 100 ) as $_ ) {
 				$this->_test_concurrency_pageviews_increment_counter( $post_id, $resource_id, $lock_backend_class );
 			}
 
-			array_map( 'pcntl_wait', $children );
+			foreach ( $children as $child ) {
+				pcntl_waitpid( $child, $_ );
+			}
 
-			$this->assertEquals( 300, get_post_meta( $post_id, 'pageviews', true ) );
+			$this->assertEquals( 600, get_post_meta( $post_id, 'pageviews', true ) );
 		}
 	}
 
