@@ -158,7 +158,14 @@ class WP_Lock_Backend_flock implements WP_Lock_Backend {
 		fclose( $fd );
 	}
 
+	/**
+	 * Get full path for given resource ID.
+	 *
+	 * @param string $id The resource ID.
+	 *
+	 * @return string The full path.
+	 */
 	private function get_path_for_id( $id ) {
-		return $this->path . '/' . md5( $id ) . '.lock';
+		return $this->path . '/' . $this->prefix . md5( $id ) . '.lock';
 	}
 }
