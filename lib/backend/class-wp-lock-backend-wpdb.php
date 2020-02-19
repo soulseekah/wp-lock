@@ -99,6 +99,7 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 				}
 				break;
 			default:
+				$this->unlock_storage( $id );
 				return false;
 		}
 
