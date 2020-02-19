@@ -220,7 +220,7 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 		}
 
 		$this->write_locks( $id, $locks );
-		debug_log( $this->unlock_storage( $id ) );
+		$this->unlock_storage( $id );
 	}
 
 	/**
