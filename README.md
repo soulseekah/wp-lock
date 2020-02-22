@@ -15,7 +15,7 @@ Consider the following user balance topup function that is susceptible to a race
 public function topup_user_balance( $user_id, $topup ) {
 	$balance = get_user_meta( $user_id, 'balance', true );
 	$balance = $balance + $topup;
-	update_user_meta( $user_id, 'balance', $balance = get_user_meta( $user_id, 'balance', true ) + $topup );
+	update_user_meta( $user_id, 'balance', $balance );
 	return $balance;
 }
 ```
