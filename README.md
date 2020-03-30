@@ -44,3 +44,7 @@ The above code is thread safe.
 
 - `WP_Lock::READ` - other processes can acquire READ but not WRITE until the original lock is released. A shared read lock.
 - `WP_Lock::WRITE` (default) - other processes can't acquire READ or WRITE locks until the original lock is released. An exclusive read-write lock
+
+# Credits
+
+Sponsored by [threadsafe.org](threadsafe.org)
