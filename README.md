@@ -47,4 +47,4 @@ The above code is thread safe.
 
 # Credits
 
-Sponsored by [threadsafe.org](threadsafe.org)
+Sponsored by [threadsafe.org](https://threadsafe.org)
