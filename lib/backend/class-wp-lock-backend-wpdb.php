@@ -241,7 +241,7 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 
 		$not_exists = "SELECT 1 FROM $table_name WHERE $key_column IN (%s, %s) LIMIT 1";
 		$wpdb->query( $wpdb->prepare(
-			"INSERT INTO $table_name ($key_column, $value_column) SELECT %s, %s FROM DUAL WHERE NOT EXISTS ($not_exists)",
+			"INSERT INTO $table_name ($key_column, $value_column, autoload) SELECT %s, %s, 'no' FROM DUAL WHERE NOT EXISTS ($not_exists)",
 			$key_name, serialize( array() ), $key_name, $key_name . '.locked'
 		) );
 	}
