@@ -44,4 +44,5 @@ function wp_lock_set_default_backend( $lock_backend ) {
 	if ( is_null( $lock_backend ) ) {
 		return new WP_Lock_Backend_flock();
 	}
+	return $lock_backend;
 }
