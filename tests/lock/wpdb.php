@@ -41,7 +41,7 @@ class WP_Lock_Backend_wpdb_UnitTestCase extends WP_UnitTestCase {
 			}
 
 			list( $key_column, $value_column ) = $backend->get_table_columns();
-			$this->assertEquals( array( 'a:0:{}' ), $wpdb->get_col( $wpdb->prepare(
+			$this->assertEquals( array( 'a:2:{s:2:"id";s:6:"' . $id . '";s:5:"locks";a:0:{}}' ), $wpdb->get_col( $wpdb->prepare(
 				"SELECT $value_column FROM $table WHERE $key_column = %s",
 				$backend->get_key_for_id( $id )
 			) ) );
