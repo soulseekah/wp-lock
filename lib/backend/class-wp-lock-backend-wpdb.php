@@ -13,6 +13,11 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 	private $prefix;
 
 	/**
+	 * @var string[] The locked storages.
+	 */
+	private $storages = array();
+
+	/**
 	 * Lock backend constructor.
 	 *
 	 * @param string $prefix The key name prefix. Default: empty.
@@ -21,7 +26,10 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 		$this->prefix = $prefix;
 
 		register_shutdown_function( function( $lock ) {
-			$lock->unlock_storage(); // Always try to unlock the storage when exiting.
+			/**
+			 * Always try to unlock all storages when exiting.
+			 */
+			array_map( array( $lock, 'unlock_storage' ), array_filter( $lock->storages ) );
 		}, $this );
 	}
 
@@ -180,10 +188,12 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 		$table_name = $this->get_table_name();
 		list( $key_column, $value_column ) = $this->get_table_columns();
 
-		return !! $wpdb->update( $table_name,
+		$locked = !! $wpdb->update( $table_name,
 			array( $key_column => $this->get_key_for_id( $id ) . '.locked' ),
 			array( $key_column => $this->get_key_for_id( $id )  )
 		);
+
+		return $this->storages[ $id ] = $id;
 	}
 
 	/**
@@ -199,10 +209,12 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 		$table_name = $this->get_table_name();
 		list( $key_column, $value_column ) = $this->get_table_columns();
 
-		return !! $wpdb->update( $table_name,
+		$unlocked = !! $wpdb->update( $table_name,
 			array( $key_column => $this->get_key_for_id( $id )  ),
 			array( $key_column => $this->get_key_for_id( $id ) . '.locked' )
 		);
+
+		return $this->storages[ $id ] = false;
 	}
 
 	/**
