@@ -19,6 +19,10 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 	 */
 	public function __construct( $prefix = '_lock_' ) {
 		$this->prefix = $prefix;
+
+		register_shutdown_function( function( $lock ) {
+			$lock->unlock_storage(); // Always try to unlock the storage when exiting.
+		}, $this );
 	}
 
 	/**
