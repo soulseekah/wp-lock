@@ -193,7 +193,43 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 			array( $key_column => $this->get_key_for_id( $id )  )
 		);
 
-		return $this->storages[ $id ] = $id;
+		$by = $wpdb->get_var( $sql = $wpdb->prepare(
+			"SELECT $value_column FROM $table_name WHERE $key_column = %s",
+			$this->get_key_for_id( $id ) . '.locked'
+		) );
+
+		if ( ! $locked ) {
+			/**
+			 * Reset lock if PID or CID do no longer exist.
+			 */
+			$by = unserialize( $by );
+			if ( empty( $by['_pid'] ) && empty( $by['_cid'] ) ) {
+				$this->unlock_storage( $id ); // Reset as the state owner is unknown.
+				return $this->lock_storage( $id );
+			}
+
+			if ( ( ! empty( $by['_pid'] ) ) && ( ! file_exists( "/proc/{$by['_pid']}" ) ) ) {
+				$this->unlock_storage( $id ); // Reset as the state owner PID is no longer running.
+				return $this->lock_storage( $id );
+			} else if ( ( ! empty( $by['_cid'] ) ) && empty( $wpdb->get_var( $wpdb->prepare( "SELECT id FROM information_schema.processlist WHERE id = %s", $by['_cid'] ) ) ) ) {
+				$this->unlock_storage( $id ); // Reset as the state owner CID is no longer present.
+				return $this->lock_storage( $id );
+			}
+		} else {
+			/**
+			 * Record PID and CID of storage locker.
+			 */
+			$by = unserialize( $by );
+			$by['_pid'] = getmypid();
+			$by['_cid'] = $wpdb->get_var( "SELECT CONNECTION_ID()" );
+
+			$wpdb->update( $table_name,
+				array( $value_column => serialize( $by ) ),
+				array( $key_column => $this->get_key_for_id( $id ) . '.locked' )
+			);
+		}
+
+		return !! $this->storages[ $id ] = ( $locked ? $id : false );
 	}
 
 	/**
@@ -214,7 +250,7 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 			array( $key_column => $this->get_key_for_id( $id ) . '.locked' )
 		);
 
-		return $this->storages[ $id ] = false;
+		return !! $this->storages[ $id ] = ( $unlocked ? false : $id );
 	}
 
 	/**
@@ -302,5 +338,21 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 	 */
 	public function get_key_for_id( $id ) {
 		return $this->prefix . md5( $id );
+	}
+
+	/**
+	 * Test proxy to self::lock_storage()
+	 *
+	 * @private
+	 *
+	 * @return bool The result of the implementation call.
+	 */
+	public function _lock_storage_t() {
+		if ( ! defined( 'DOING_TESTS' ) ) {
+			trigger_error( 'Test proxy called without test context.' );
+			return false;
+		}
+
+		return call_user_func_array( array( $this, 'lock_storage' ), func_get_args() );
 	}
 }
