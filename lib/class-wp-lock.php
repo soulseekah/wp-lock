@@ -27,6 +27,11 @@ class WP_Lock {
 	private $lock_backend;
 
 	/**
+	 * @var int The number of current locks.
+	 */
+	private $locks = 0;
+
+	/**
 	 * Create a resource concurrency lock.
 	 *
 	 * @param string          $resource_id  The lock identifier. An arbitrary string.
@@ -42,6 +47,12 @@ class WP_Lock {
 		 * @param string               $resource_id  The lock identifier. An arbitrary string.
 		 */
 		$this->lock_backend = apply_filters( 'wp_lock_backend', $lock_backend, $resource_id );
+
+		register_shutdown_function( function( $lock ) {
+			if ( $lock->locks ) {
+				trigger_error( 'Not all locks released for ' . $lock->id );
+			}
+		}, $this );
 	}
 
 	/**
@@ -62,6 +73,7 @@ class WP_Lock {
 	 * @return bool Whether the lock has been acquired or not.
 	 */
 	public function acquire( $level = self::WRITE, $blocking = true, $expiration = 30 ) {
+		$this->locks++;
 		return $this->lock_backend->acquire( $this->id, $level, $blocking, $expiration );
 	}
 
@@ -71,6 +83,12 @@ class WP_Lock {
 	 * @return void
 	 */
 	public function release() {
+		if ( ! $this->locks ) {
+			trigger_error( 'Releasing unaquired lock.' );
+		}
+
+		$this->locks--;
+
 		$this->lock_backend->release( $this->id );
 	}
 }
