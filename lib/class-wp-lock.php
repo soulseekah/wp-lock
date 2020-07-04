@@ -73,8 +73,7 @@ class WP_Lock {
 	 * @return bool Whether the lock has been acquired or not.
 	 */
 	public function acquire( $level = self::WRITE, $blocking = true, $expiration = 30 ) {
-		$this->locks++;
-		return $this->lock_backend->acquire( $this->id, $level, $blocking, $expiration );
+		return $this->lock_backend->acquire( $this->id, $level, $blocking, $expiration ) && ++$this->locks;
 	}
 
 	/**
@@ -87,8 +86,8 @@ class WP_Lock {
 			trigger_error( 'Releasing unaquired lock.' );
 		}
 
-		$this->locks--;
-
 		$this->lock_backend->release( $this->id );
+
+		$this->locks--;
 	}
 }
