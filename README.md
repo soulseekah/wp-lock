@@ -11,7 +11,7 @@ WordPress is no longer just a blogging platform. It's a framework. And like all 
 Consider the following user balance topup function that is susceptible to a race condition:
 
 ```php
-// A thread-safe version of the above topup function.
+// topup function that is not thread-safe
 public function topup_user_balance( $user_id, $topup ) {
 	$balance = get_user_meta( $user_id, 'balance', true );
 	$balance = $balance + $topup;
