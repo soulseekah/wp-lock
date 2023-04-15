@@ -1,4 +1,7 @@
 <?php
+
+namespace Soulseekah\WP_Lock;
+
 /**
  * The WP_Lock class.
  */

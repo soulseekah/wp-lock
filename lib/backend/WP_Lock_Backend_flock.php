@@ -1,4 +1,7 @@
 <?php
+
+namespace Soulseekah\WP_Lock;
+
 if ( class_exists( 'WP_Lock_Backend_flock' ) ) {
 	return;
 }
