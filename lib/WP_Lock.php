@@ -43,6 +43,11 @@ class WP_Lock {
 	public function __construct( $resource_id, $lock_backend = null ) {
 		$this->id = $resource_id;
 
+		// Set the default lock backend if null.
+		if ( is_null( $lock_backend ) ) {
+			$lock_backend = Factory::get_default_lock();
+		}
+
 		/**
 		 * Filter the lock backend used.
 		 *

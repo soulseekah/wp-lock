@@ -23,6 +23,9 @@ public function topup_user_balance( $user_id, $topup ) {
 Try to call the above code 100 times in 16 threads. The balance will be less than it is supposed to be.
 
 ```php
+// Be aware you have to declare the used namespace since v2.0  
+use \Soulseekah\WP_Lock\WP_Lock;
+
 // A thread-safe version of the above topup function.
 public function topup_user_balance( $user_id, $topup ) {
 	$user_balance_lock = new WP_Lock( "$user_id:meta:balance" );
@@ -44,6 +47,14 @@ The above code is thread safe.
 
 - `WP_Lock::READ` - other processes can acquire READ but not WRITE until the original lock is released. A shared read lock.
 - `WP_Lock::WRITE` (default) - other processes can't acquire READ or WRITE locks until the original lock is released. An exclusive read-write lock
+
+# Release Log
+
+| Version | Notice                                                               |
+|---------|----------------------------------------------------------------------|
+| *2.0*   | Namespaces are introduced. Plugin is available like the PHP package. |
+
+
 
 # Credits
 
