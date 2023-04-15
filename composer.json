@@ -1,4 +1,7 @@
 {
+    "name": "soulseekah/wp-lock",
+    "description": "A library locking and mutexes for the WordPress Core",
+    "homepage": "https://github.com/soulseekah/wp-lock",
     "require-dev": {
         "phpunit/phpunit": "^6"
     },
