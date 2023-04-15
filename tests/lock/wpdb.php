@@ -1,4 +1,7 @@
 <?php
+
+use Soulseekah\WP_Lock\WP_Lock_Backend_wpdb;
+
 class WP_Lock_Backend_wpdb_UnitTestCase extends WP_UnitTestCase {
 	public function test_ensure_lock_exists() {
 		if ( ! function_exists( 'pcntl_fork' ) ) {

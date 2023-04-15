@@ -1,12 +1,16 @@
 <?php
+
+use Soulseekah\WP_Lock\WP_Lock;
+
 class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 	/**
 	 * Generates a set of new lock backend instances.
 	 */
 	private function get_lock_backend_classes() {
+		$namespace = '\Soulseekah\WP_Lock\\';
 		return array(
-			'WP_Lock_Backend_flock',
-//			'WP_Lock_Backend_wpdb',
+			$namespace . 'WP_Lock_Backend_flock',
+//			$namespace . 'WP_Lock_Backend_wpdb',
 		);
 	}
 
