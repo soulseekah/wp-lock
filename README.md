@@ -50,9 +50,9 @@ The above code is thread safe.
 
 # Release Log
 
-| Version | Notice                                                               |
-|---------|----------------------------------------------------------------------|
-| *2.0*   | Namespaces are introduced. Plugin is available like the PHP package. |
+| Version | Notice                                                                                        |
+|---------|-----------------------------------------------------------------------------------------------|
+| *2.0*   | Namespaces are introduced. Plugin is available like the PHP package. <br/> Requires php >=7.4 |
 
 
 

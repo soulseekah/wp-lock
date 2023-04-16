@@ -148,5 +148,6 @@ install_db() {
 }
 
 install_wp
-install_test_suite
+# WP Test Suite has been already installed by Github Action
+#install_test_suite
 install_db

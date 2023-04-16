@@ -10,6 +10,7 @@
 	>
 	<php>
 		<const name="DOING_TESTS" value="1" />
+		<const name="WP_TESTS_PHPUNIT_POLYFILLS_PATH" value="vendor/yoast/phpunit-polyfills/phpunitpolyfills-autoload.php" />
 	</php>
 	<testsuites>
 		<testsuite name="WP_Lock concurrency mutexes for WordPress test suite">

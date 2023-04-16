@@ -1,0 +1,40 @@
+name: Run Tests
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened]
+
+env:
+  WP_VERSION: "latest"
+
+jobs:
+  tests:
+    strategy:
+      matrix:
+        php-version: [ 7.4, 8.0, 8.1, 8.2 ]
+        phpunit-version: [ 9 ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: shivammathur/setup-php@v2
+        name: preparing env
+        with:
+          php-version: ${{ matrix.php-version }}
+          phpunit-version: ${{ matrix.phpunit-version }}
+          tools: composer:v2, phpunit:${{ matrix.phpunit-version }}
+      - name: Set up WordPress and WordPress Test Library
+        uses: sjinks/setup-wordpress-test-library@master
+        with:
+          version: latest
+          db_user: root
+          db_password: root
+          db_name: wordpress_test
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: run
+        run: |
+          sudo /etc/init.d/mysql start
+          bash tests/bin/install-wp-tests.sh wordpress_test root root localhost ${{ env.WP_VERSION }}
+          composer require --dev yoast/phpunit-polyfills
+          WP_TESTS_DIR=/tmp/wordpress-tests-lib/ 
+          phpunit -c phpunit.xml.dist
