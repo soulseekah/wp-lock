@@ -1,8 +1,7 @@
 name: Run Tests
 
 on:
-  pull_request:
-    types: [synchronize, opened, reopened]
+  pull_request
 
 env:
   WP_VERSION: "latest"
