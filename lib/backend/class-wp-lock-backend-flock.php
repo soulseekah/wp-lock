@@ -1,7 +1,5 @@
 <?php
-if ( class_exists( 'WP_Lock_Backend_flock' ) ) {
-	return;
-}
+namespace soulseekah\WP_Lock;
 
 /**
  * An `flock` based lock backed implementation.
