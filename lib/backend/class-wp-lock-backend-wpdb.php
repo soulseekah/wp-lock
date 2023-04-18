@@ -1,7 +1,5 @@
 <?php
-if ( class_exists( 'WP_Lock_Backend_wpdb' ) ) {
-	return;
-}
+namespace soulseekah\WP_Lock;
 
 /**
  * A `wpdb` based lock backed implementation.

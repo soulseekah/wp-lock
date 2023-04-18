@@ -1,5 +1,20 @@
 {
+    "name": "soulseekah/wp-lock",
+    "description": "A library for locking and mutexes for the WordPress Core",
+    "homepage": "https://github.com/soulseekah/wp-lock",
+    "require": {
+        "php": ">=7.4"
+    },
+    "autoload": {
+        "files": [
+            "lib/class-wp-lock.php",
+            "lib/backend/class-wp-lock-backend.php",
+            "lib/backend/class-wp-lock-backend-flock.php",
+            "lib/backend/class-wp-lock-backend-wpdb.php"
+        ]
+    },
     "require-dev": {
-        "phpunit/phpunit": "^6"
+        "phpunit/phpunit": "^9",
+        "yoast/phpunit-polyfills": "^1.0"
     }
 }

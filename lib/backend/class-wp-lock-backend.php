@@ -1,4 +1,6 @@
 <?php
+namespace soulseekah\WP_Lock;
+
 /**
  * The lock backend interface.
  */

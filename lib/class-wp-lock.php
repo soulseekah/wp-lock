@@ -1,4 +1,6 @@
 <?php
+namespace soulseekah\WP_Lock;
+
 /**
  * The WP_Lock class.
  */
@@ -39,6 +41,10 @@ class WP_Lock {
 	 */
 	public function __construct( $resource_id, $lock_backend = null ) {
 		$this->id = $resource_id;
+
+		if ( is_null( $lock_backend ) ) {
+			$lock_backend = new WP_Lock_Backend_flock();
+		}
 
 		/**
 		 * Filter the lock backend used.
