@@ -1,14 +1,27 @@
 <?php
+
+use soulseekah\WP_Lock\helpers\Database;
 use soulseekah\WP_Lock\WP_Lock;
+use Soulseekah\WP_Lock\WP_Lock_Backend;
+use soulseekah\WP_Lock\WP_Lock_WPDB;
 
 class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void {
+	    Database::register_table( WP_Lock_WPDB::TABLE_NAME );
+    }
+
 	/**
 	 * Generates a set of new lock backend instances.
 	 */
 	private function get_lock_backend_classes() {
 		return array(
 			'\soulseekah\WP_Lock\\WP_Lock_Backend_flock',
-			'\soulseekah\WP_Lock\\WP_Lock_Backend_wpdb',
+//			'\soulseekah\WP_Lock\\WP_Lock_Backend_wpdb',
+			'\soulseekah\WP_Lock\\WP_Lock_WPDB',
 		);
 	}
 
@@ -23,6 +36,7 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 		foreach ( $this->get_lock_backend_classes() as $lock_backend_class ) {
 			$resource_id = $this->generate_lock_resource_id();
 
+            /** @var WP_Lock_Backend $lock_backend_class */
 			$lock_backend = new $lock_backend_class();
 			$this->assertTrue( $lock_backend->acquire( $resource_id, WP_Lock::READ, true, 0 ) );
 
@@ -146,12 +160,10 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 			$this->markTestSkipped( 'PCNTL not available' );
 		}
 
-		global $wpdb;
-
 		foreach ( $this->get_lock_backend_classes() as $lock_backend_class ) {
 			$resource_id = $this->generate_lock_resource_id();
 
-			$post_id = $this->factory->post->create();
+			$post_id = $this->factory()->post->create();
 			update_post_meta( $post_id, 'pageviews', 0 );
 
 			$this->commit_transaction();
@@ -160,6 +172,8 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 				array( $this, '_test_concurrency_pageviews_child' ),
 				array( $post_id, $resource_id, $lock_backend_class )
 			);
+
+            $children = [];
 
 			$children[] = run_in_child( array( $callback, 'run' ) );
 			$children[] = run_in_child( array( $callback, 'run' ) );

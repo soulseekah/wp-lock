@@ -7,14 +7,23 @@
     },
     "autoload": {
         "files": [
+            "lib/install.php",
             "lib/class-wp-lock.php",
+            "lib/helpers/Database.php",
             "lib/backend/class-wp-lock-backend.php",
             "lib/backend/class-wp-lock-backend-flock.php",
-            "lib/backend/class-wp-lock-backend-wpdb.php"
+            "lib/backend/class-wp-lock-backend-wpdb.php",
+            "lib/backend/class-wp-lock-wpdb.php"
         ]
     },
     "require-dev": {
         "phpunit/phpunit": "^9",
         "yoast/phpunit-polyfills": "^1.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "johnpbloch/wordpress-core-installer": true
+        }
     }
 }
