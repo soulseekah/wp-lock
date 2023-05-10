@@ -58,7 +58,7 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 		 * Prune expired locks.
 		 */
 		foreach ( $locks as $i => $lock ) {
-			if ( $lock['expiration'] < microtime( true ) ) {
+			if ( $lock['expiration'] && $lock['expiration'] < microtime( true ) ) {
 				unset( $locks[ $i ] );
 			}
 		}
