@@ -121,24 +121,34 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 			$this->markTestSkipped( 'PCNTL not available' );
 		}
 
+		global $wpdb;
+
 		foreach ( $this->get_lock_backend_classes() as $lock_backend_class ) {
 			$resource_id = $this->generate_lock_resource_id();
 
 			$lock_backend = new $lock_backend_class();
 			$this->assertTrue( $lock_backend->acquire( $resource_id, WP_Lock::WRITE, false, 0 ) );
+			$this->commit_transaction();
 
 			$callback = new WP_Lock_Backend_Callback(
 				array( $this, '_test_concurrency_simple_child' ),
 				array( $resource_id, $lock_backend_class )
 			);
 
-			run_in_child( array( $callback, 'run' ) );
+			$children[] = run_in_child( array( $callback, 'run' ) );
+		}
+
+		foreach ( $children as $child ) {
+			pcntl_waitpid( $child, $status );
+			$this->assertEquals(0, pcntl_wexitstatus($status), "Unexpected exit code in _test_concurrency_simple_child PID $child");
 		}
 	}
 
 	public function _test_concurrency_simple_child( $resource_id, $lock_backend_class ) {
 		$lock_backend = new $lock_backend_class();
-		$this->assertFalse( $lock_backend->acquire( $resource_id, WP_Lock::WRITE, false, 0 ) );
+		$result = $lock_backend->acquire( $resource_id, WP_Lock::WRITE, false, 0 );
+		$this->commit_transaction();
+		return false === $result;
 	}
 
 	public function test_concurrency_pageviews() {
