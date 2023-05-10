@@ -33,11 +33,3 @@ function run_in_child( $callback ) {
 
 	return $child;
 }
-
-// @todo temporary, remove
-function debug_log( $message ) {
-	if ( ! is_string( $message ) ) {
-		$message = json_encode( $message );
-	}
-	file_put_contents( 'debug.log', sprintf( "[%d] $message\n", getmypid() ), FILE_APPEND );
-}

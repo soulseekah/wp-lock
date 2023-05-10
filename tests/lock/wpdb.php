@@ -61,6 +61,8 @@ class WP_Lock_Backend_wpdb_UnitTestCase extends WP_UnitTestCase {
 			$this->markTestSkipped( 'PCNTL not available' );
 		}
 
+		$this->commit_transaction();
+
 		$backend = new WP_Lock_Backend_wpdb();
 		$id = wp_generate_password( 12, false );
 
@@ -77,7 +79,7 @@ class WP_Lock_Backend_wpdb_UnitTestCase extends WP_UnitTestCase {
 
 		posix_kill( $child, SIGKILL );
 
-		sleep( 1 );
+		sleep( 6 );
 
 		$this->assertTrue( $backend->_lock_storage_t( $id ) );
 
@@ -94,7 +96,7 @@ class WP_Lock_Backend_wpdb_UnitTestCase extends WP_UnitTestCase {
 
 		$this->assertFalse( $backend->_lock_storage_t( $id ) );
 
-		sleep( 2 );
+		sleep( 6 );
 
 		$this->assertTrue( $backend->_lock_storage_t( $id ) );
 	}
