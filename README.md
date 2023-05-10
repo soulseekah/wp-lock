@@ -45,6 +45,18 @@ The above code is thread safe.
 - `WP_Lock::READ` - other processes can acquire READ but not WRITE until the original lock is released. A shared read lock.
 - `WP_Lock::WRITE` (default) - other processes can't acquire READ or WRITE locks until the original lock is released. An exclusive read-write lock
 
-# Credits
+## Usage
 
-Sponsored by [threadsafe.org](https://threadsafe.org)
+Require via Composer `composer require soulseekah/wp-lock` in your plugin.
+
+```php
+use soulseekah\WP_Lock;
+
+require 'vendor/autoload.php';
+
+$lock = new WP_Lock\WP_Lock( 'my-first-lock' );
+```
+
+## Caveats
+
+In highly concurrent setups you may get Deadlock errors from MySQL. This is normal. The library handles these gracefully and retries the query as needed.
