@@ -305,15 +305,15 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 	/**
 	 * Return the lock store table name.
 	 *
+	 * We always use the first site's storage in multisite mode
+	 * to allow lock sharing. Use the $prefix parameter to split
+	 * by site ID.
+	 *
 	 * @return string The databse table name.
 	 */
 	public function get_table_name() {
-		/**
-		 * @todo What about multisite?
-		 * @todo What about multinetwork?
-		 */
 		global $wpdb;
-		return $wpdb->options;
+		return $wpdb->prefix . 'options';
 	}
 
 	/**
