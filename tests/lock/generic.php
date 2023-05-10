@@ -193,7 +193,7 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 		 * Critical section.
 		 */
 		$pageviews = get_post_meta( $post_id, 'pageviews', true );
-		update_post_meta( $post_id, 'pageviews', $pageviews + 1 );
+		update_post_meta( $post_id, 'pageviews', intval( $pageviews ) + 1 );
 
 		$lock_backend->release( $resource_id );
 	}
