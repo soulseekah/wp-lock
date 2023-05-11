@@ -2,3 +2,4 @@ vendor
 wordpress-develop
 *.swp
 composer.lock
+.phpunit.result.cache

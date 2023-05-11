@@ -51,16 +51,16 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 
 		$locks = $this->read_locks( $id );
 
-//		/**
-//		 * Prune expired locks.
-//		 */
-//		foreach ( $locks as $i => $lock ) {
-//			if ( $lock['expiration'] < microtime( true ) ) {
-//				unset( $locks[ $i ] );
-//			}
-//		}
-//
-//		$this->write_locks( $id, $locks );
+		/**
+		 * Prune expired locks.
+		 */
+		foreach ( $locks as $i => $lock ) {
+			if ( $lock['expiration'] && $lock['expiration'] < microtime( true ) ) {
+				unset( $locks[ $i ] );
+			}
+		}
+
+		$this->write_locks( $id, $locks );
 
 		switch ( $level ) {
 			case WP_Lock::READ:
@@ -143,11 +143,14 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 
 		$storage['locks'] = $locks;
 
-		$wpdb->update(
-			$table_name,
-			array( $value_column => serialize( $storage ) ),
-			array( $key_column   => $this->get_key_for_id( $id ) . '.locked' )
-		);
+		$wpdb->last_error = 'Sentinel error';
+		while ( $wpdb->last_error ) {
+			$wpdb->update(
+				$table_name,
+				array( $value_column => serialize( $storage ) ),
+				array( $key_column   => $this->get_key_for_id( $id ) . '.locked' )
+			);
+		}
 	}
 
 	/**
@@ -191,10 +194,13 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 		$table_name = $this->get_table_name();
 		list( $key_column, $value_column ) = $this->get_table_columns();
 
-		$locked = !! $wpdb->update( $table_name,
-			array( $key_column => $this->get_key_for_id( $id ) . '.locked' ),
-			array( $key_column => $this->get_key_for_id( $id )  )
-		);
+		$wpdb->last_error = 'Sentinel error';
+		while ( $wpdb->last_error ) {
+			$locked = !! $wpdb->update( $table_name,
+				array( $key_column => $this->get_key_for_id( $id ) . '.locked' ),
+				array( $key_column => $this->get_key_for_id( $id )  )
+			);
+		}
 
 		$storage = maybe_unserialize( $wpdb->get_var( $sql = $wpdb->prepare(
 			"SELECT $value_column FROM $table_name WHERE $key_column = %s",
@@ -202,6 +208,10 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 		) ) );
 
 		if ( ! $locked ) {
+			if ( empty( $storage['updated'] ) || ( $storage['updated'] + 5 > time() ) ) {
+				return false; // Too early, someone has it but hasn't updated yet.
+			}
+
 			/**
 			 * Reset lock if PID or CID do no longer exist.
 			 */
@@ -213,21 +223,27 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 			if ( ( ! empty( $storage['pid'] ) ) && ( ! file_exists( "/proc/{$storage['pid']}" ) ) ) {
 				$this->unlock_storage( $id ); // Reset as the state owner PID is no longer running.
 				return $this->lock_storage( $id );
-			} else if ( ( ! empty( $storage['cid'] ) ) && empty( $wpdb->get_var( $wpdb->prepare( "SELECT id FROM information_schema.processlist WHERE id = %s", $storage['cid'] ) ) ) ) {
+			}
+
+			if ( ( ! empty( $storage['cid'] ) ) && empty( $wpdb->get_var( $wpdb->prepare( "SELECT id FROM information_schema.processlist WHERE id = %s", $storage['cid'] ) ) ) ) {
 				$this->unlock_storage( $id ); // Reset as the state owner CID is no longer present.
 				return $this->lock_storage( $id );
 			}
 		} else {
 			/**
-			 * Record PID and CID of storage locker.
+			 * Record time, PID and CID of storage locker.
 			 */
+			$storage['updated'] = time();
 			$storage['pid'] = getmypid();
 			$storage['cid'] = $wpdb->get_var( "SELECT CONNECTION_ID()" );
 
-			$wpdb->update( $table_name,
-				array( $value_column => serialize( $storage ) ),
-				array( $key_column => $this->get_key_for_id( $id ) . '.locked' )
-			);
+			$wpdb->last_error = 'Sentinel error';
+			while ( $wpdb->last_error ) {
+				$wpdb->update( $table_name,
+					array( $value_column => serialize( $storage ) ),
+					array( $key_column => $this->get_key_for_id( $id ) . '.locked' )
+				);
+			}
 		}
 
 		return !! $this->storages[ $id ] = ( $locked ? $id : false );
@@ -246,10 +262,13 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 		$table_name = $this->get_table_name();
 		list( $key_column, $value_column ) = $this->get_table_columns();
 
-		$unlocked = !! $wpdb->update( $table_name,
-			array( $key_column => $this->get_key_for_id( $id )  ),
-			array( $key_column => $this->get_key_for_id( $id ) . '.locked' )
-		);
+		$wpdb->last_error = 'Sentinel error';
+		while ( $wpdb->last_error ) {
+			$unlocked = !! $wpdb->update( $table_name,
+				array( $key_column => $this->get_key_for_id( $id )  ),
+				array( $key_column => $this->get_key_for_id( $id ) . '.locked' )
+			);
+		}
 
 		return !! $this->storages[ $id ] = ( $unlocked ? false : $id );
 	}
@@ -292,25 +311,29 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 		$table_name = $this->get_table_name();
 		list( $key_column, $value_column ) = $this->get_table_columns();
 
-		$not_exists = "SELECT 1 FROM $table_name WHERE $key_column IN (%s, %s) LIMIT 1";
-		$wpdb->query( $wpdb->prepare(
-			"INSERT INTO $table_name ($key_column, $value_column, autoload) SELECT %s, %s, 'no' FROM DUAL WHERE NOT EXISTS ($not_exists)",
-			$key_name, serialize( array( 'id' => $id, 'locks' => array() ) ), $key_name, $key_name . '.locked'
-		) );
+		$exists = "SELECT 1 FROM $table_name WHERE $key_column IN (%s, %s) LIMIT 1";
+
+		$wpdb->last_error = 'Sentinel error';
+		while ( $wpdb->last_error ) {
+			$wpdb->query( $wpdb->prepare(
+				"INSERT INTO $table_name ($key_column, $value_column, autoload) SELECT %s, %s, 'no' FROM DUAL WHERE NOT EXISTS ($exists)",
+				$key_name, serialize( array( 'id' => $id, 'locks' => array() ) ), $key_name, $key_name . '.locked'
+			) );
+		}
 	}
 
 	/**
 	 * Return the lock store table name.
 	 *
+	 * We always use the first site's storage in multisite mode
+	 * to allow lock sharing. Use the $prefix parameter to split
+	 * by site ID.
+	 *
 	 * @return string The databse table name.
 	 */
 	public function get_table_name() {
-		/**
-		 * @todo What about multisite?
-		 * @todo What about multinetwork?
-		 */
 		global $wpdb;
-		return $wpdb->options;
+		return $wpdb->prefix . 'options';
 	}
 
 	/**
