@@ -16,17 +16,4 @@
 			<directory suffix=".php">tests/lock</directory>
 		</testsuite>
 	</testsuites>
-	<filter>
-		<whitelist processUncoveredFilesFromWhitelist="false">
-			<directory suffix=".php">.</directory>
-			<exclude>
-				<directory>tests</directory>
-				<directory>vendor</directory>
-				<directory>wordpress-develop</directory>
-			</exclude>
-		</whitelist>
-	</filter>
-	<logging>
-		<log type="coverage-clover" target="/tmp/clover.xml" charset="UTF-8" />
-	</logging>
 </phpunit>

@@ -26,20 +26,10 @@ function run_in_child( $callback ) {
 
 	if ( ! $child = pcntl_fork() ) {
 		$wpdb->db_connect( false );
-		call_user_func( $callback );
-
-		exit;
+		exit( call_user_func( $callback ) ? 0 : 1 );
 	}
 
 	$wpdb->db_connect( false );
 
 	return $child;
-}
-
-// @todo temporary, remove
-function debug_log( $message ) {
-	if ( ! is_string( $message ) ) {
-		$message = json_encode( $message );
-	}
-	file_put_contents( 'debug.log', sprintf( "[%d] $message\n", getmypid() ), FILE_APPEND );
 }

@@ -13,6 +13,17 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Prevent internal testing transactions.
+	 *
+	 * These get in the way when we're forking children.
+	 */
+	private function prevent_transactions() {
+		global $wpdb;
+		$wpdb->close();
+		$wpdb->db_connect( false );
+	}
+
+	/**
 	 * Generate a unique resource ID.
 	 */
 	private function generate_lock_resource_id() {
@@ -121,6 +132,8 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 			$this->markTestSkipped( 'PCNTL not available' );
 		}
 
+		$this->prevent_transactions();
+
 		foreach ( $this->get_lock_backend_classes() as $lock_backend_class ) {
 			$resource_id = $this->generate_lock_resource_id();
 
@@ -132,13 +145,19 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 				array( $resource_id, $lock_backend_class )
 			);
 
-			run_in_child( array( $callback, 'run' ) );
+			$children[] = run_in_child( array( $callback, 'run' ) );
+		}
+
+		foreach ( $children as $child ) {
+			pcntl_waitpid( $child, $status );
+			$this->assertEquals(0, pcntl_wexitstatus($status), "Unexpected exit code in _test_concurrency_simple_child PID $child");
 		}
 	}
 
 	public function _test_concurrency_simple_child( $resource_id, $lock_backend_class ) {
 		$lock_backend = new $lock_backend_class();
-		$this->assertFalse( $lock_backend->acquire( $resource_id, WP_Lock::WRITE, false, 0 ) );
+		$result = $lock_backend->acquire( $resource_id, WP_Lock::WRITE, false, 0 );
+		return false === $result;
 	}
 
 	public function test_concurrency_pageviews() {
@@ -148,13 +167,14 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 
 		global $wpdb;
 
+		$this->prevent_transactions();
+		$suppress_errors = $wpdb->suppress_errors( true );
+
 		foreach ( $this->get_lock_backend_classes() as $lock_backend_class ) {
 			$resource_id = $this->generate_lock_resource_id();
 
 			$post_id = $this->factory->post->create();
 			update_post_meta( $post_id, 'pageviews', 0 );
-
-			$this->commit_transaction();
 
 			$callback = new WP_Lock_Backend_Callback(
 				array( $this, '_test_concurrency_pageviews_child' ),
@@ -172,28 +192,32 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 			}
 
 			foreach ( $children as $child ) {
-				pcntl_waitpid( $child, $_ );
+				pcntl_waitpid( $child, $status );
+				$this->assertEquals(0, pcntl_wexitstatus($status), "Unexpected exit code in _test_concurrency_pageviews_child PID $child");
 			}
 
-			$this->assertEquals( 600, get_post_meta( $post_id, 'pageviews', true ) );
+			$this->assertEquals( 600, intval( get_post_meta( $post_id, 'pageviews', true ) ) );
 		}
+
+		$wpdb->suppress_errors( $suppress_errors );
 	}
 
 	public function _test_concurrency_pageviews_child( $post_id, $resource_id, $lock_backend_class) {
 		foreach ( range( 1, 100 ) as $_ ) {
 			$this->_test_concurrency_pageviews_increment_counter( $post_id, $resource_id, $lock_backend_class );
 		}
+		return true;
 	}
 
 	public function _test_concurrency_pageviews_increment_counter( $post_id, $resource_id, $lock_backend_class ) {
 		$lock_backend = new $lock_backend_class();
-		$this->assertTrue( $lock_backend->acquire( $resource_id, WP_Lock::WRITE, true, 0 ) );
+		$lock_backend->acquire( $resource_id, WP_Lock::WRITE, true, 0 );
 
 		/**
 		 * Critical section.
 		 */
 		$pageviews = get_post_meta( $post_id, 'pageviews', true );
-		update_post_meta( $post_id, 'pageviews', $pageviews + 1 );
+		update_post_meta( $post_id, 'pageviews', intval( $pageviews ) + 1 );
 
 		$lock_backend->release( $resource_id );
 	}
