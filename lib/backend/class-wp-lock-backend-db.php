@@ -2,7 +2,6 @@
 
 namespace soulseekah\WP_Lock;
 
-use Exception;
 use soulseekah\WP_Lock\helpers\Database;
 
 class WP_Lock_Backend_DB implements WP_Lock_Backend {
@@ -90,9 +89,8 @@ class WP_Lock_Backend_DB implements WP_Lock_Backend {
 
 	/**
 	 * @inheritDoc
-	 * @throws Exception
 	 */
-	public function acquire( $id, $level, $blocking, $expiration = 0 ) {
+	public function acquire( $id, $level, $blocking, $expiration = 0 ): bool {
 		global $wpdb;
 
 		// Lock level policy. We can only acquire a lock if there are no write locks.
@@ -128,7 +126,7 @@ class WP_Lock_Backend_DB implements WP_Lock_Backend {
 			// Stop suppressing errors after first attempt.
 			$attempt || $wpdb->suppress_errors( $suppress );
 
-			if ( $wpdb->last_error && ! $attempt ++ ) {
+			if ( $db_error && ! $attempt ++ ) {
 				// Maybe tables are not installed yet?
 				self::install();
 			}
