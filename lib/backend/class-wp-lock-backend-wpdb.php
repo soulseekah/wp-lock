@@ -39,9 +39,6 @@ class WP_Lock_Backend_wpdb implements WP_Lock_Backend {
 
 		$this->ensure_lock_exists( $id );
 
-		$table_name = $this->get_table_name();
-		list( $key_column, $value_column ) = $this->get_table_columns();
-
 		if ( ! $blocking ) {
 			if ( ! $this->lock_storage( $id ) ) {
 				return false;
