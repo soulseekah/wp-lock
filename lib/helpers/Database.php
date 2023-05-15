@@ -20,7 +20,7 @@ final class Database
     {
         global $wpdb;
 
-        $full_table_name = $wpdb->$key;
+        $full_table_name = $wpdb->prefix . $key;
 
         if (is_string($opts)) {
             $opts = [ 'upgrade_method' => $opts ];
