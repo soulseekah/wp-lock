@@ -3,7 +3,7 @@
 use soulseekah\WP_Lock\helpers\Database;
 use soulseekah\WP_Lock\WP_Lock;
 use Soulseekah\WP_Lock\WP_Lock_Backend;
-use soulseekah\WP_Lock\WP_Lock_WPDB;
+use soulseekah\WP_Lock\WP_Lock_Backend_DB;
 
 class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 
@@ -11,7 +11,7 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
      * @return void
      */
     protected function setUp(): void {
-	    Database::register_table( WP_Lock_WPDB::TABLE_NAME );
+	    Database::register_table( WP_Lock_Backend_DB::TABLE_NAME );
     }
 
 	/**
@@ -20,8 +20,7 @@ class WP_Lock_Backend_Generic_UnitTestCase extends WP_UnitTestCase {
 	private function get_lock_backend_classes() {
 		return array(
 			'\soulseekah\WP_Lock\\WP_Lock_Backend_flock',
-//			'\soulseekah\WP_Lock\\WP_Lock_Backend_wpdb',
-			'\soulseekah\WP_Lock\\WP_Lock_WPDB',
+			'\soulseekah\WP_Lock\\WP_Lock_Backend_DB',
 		);
 	}
 

@@ -5,7 +5,7 @@ namespace soulseekah\WP_Lock;
 use Exception;
 use soulseekah\WP_Lock\helpers\Database;
 
-class WP_Lock_WPDB implements WP_Lock_Backend {
+class WP_Lock_Backend_DB implements WP_Lock_Backend {
 	const TABLE_NAME = 'lock';
 
 	/**

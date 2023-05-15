@@ -13,7 +13,7 @@
             "lib/backend/class-wp-lock-backend.php",
             "lib/backend/class-wp-lock-backend-flock.php",
             "lib/backend/class-wp-lock-backend-wpdb.php",
-            "lib/backend/class-wp-lock-wpdb.php"
+            "lib/backend/class-wp-lock-backend-db.php"
         ]
     },
     "require-dev": {
