@@ -52,6 +52,7 @@ class WP_Lock_WPDB implements WP_Lock_Backend {
 	}
 
 	/**
+	 * Ghost lock is a lock that has no corresponding process and/or connection and has no expiration time.
 	 * Search for a ghost lock for specific lock_id in the database and remove it.
 	 *
 	 * @return void
@@ -60,13 +61,18 @@ class WP_Lock_WPDB implements WP_Lock_Backend {
 		global $wpdb;
 		$lock_key = $this->get_lock_key( $lock_id );
 
-		$locks  = $wpdb->get_results( "SELECT * FROM {$this->get_table_name()} WHERE `key` = '$lock_key'", ARRAY_A );
+		$locks  = $wpdb->get_results( "SELECT * FROM {$this->get_table_name()} WHERE `lock_key` = '$lock_key'", ARRAY_A );
 		$ghosts = [];
 		foreach ( $locks as $lock ) {
+			if ( ! empty( $lock['expire'] ) && $lock['expire'] > microtime( true ) ) {
+				// This is an unexpired lock, keep it actual. No matter if it's a ghost or not.
+				continue;
+			}
+
 			if (
 				( empty( $lock['pid'] ) && empty( $lock['cid'] ) ) ||
-				( ( ! empty( $lock['pid'] ) ) && ( ! file_exists( "/proc/{$lock['pid']}" ) ) ) ||
-				( ( ! empty( $lock['cid'] ) ) && empty(
+				( ! empty( $lock['pid'] ) && ! file_exists( "/proc/{$lock['pid']}" ) ) ||
+				( ! empty( $lock['cid'] ) && empty(
 					$wpdb->get_var(
 						$wpdb->prepare( "SELECT id FROM information_schema.processlist WHERE id = %s", $lock['cid'] )
 					)
@@ -89,16 +95,21 @@ class WP_Lock_WPDB implements WP_Lock_Backend {
 	public function acquire( $id, $level, $blocking, $expiration = 0 ) {
 		global $wpdb;
 
-		// Lock level policy.
+		// Lock level policy. We can only acquire a lock if there are no write locks.
 		$lock_level = ( $level == WP_Lock::READ ) ? " AND `level` > $level" : '';
-		$query      = "INSERT INTO {$this->get_table_name()} (`key`, `original_key`, `level`, `pid`, `cid`) " .
-		              "SELECT '%s', '%s', '%s', '%s', '%s' " .
-		              "WHERE NOT EXISTS (SELECT 1 FROM {$this->get_table_name()} WHERE `key` = '%s'{$lock_level})";
 
-		$attempt = 0;
+		// Expired locks policy. We can only acquire a lock if there are no unexpired ones.
+		$expired    = " AND (`expire` = 0 OR `expire` >= " . ( microtime( true ) ) . ")";
+
+		$query      = "INSERT INTO {$this->get_table_name()} (`lock_key`, `original_key`, `level`, `pid`, `cid`, `expire`) " .
+		              "SELECT '%s', '%s', '%s', '%s', '%s', '%s' " .
+		              "WHERE NOT EXISTS (SELECT 1 FROM {$this->get_table_name()} WHERE `lock_key` = '%s'{$lock_level}{$expired})";
+
+		$attempt  = 0;
+		$suppress = false;
 		do {
-			// Suppress errors on first attempt, to avoid polluting the log with table creation errors.
-			$attempt || $wpdb->suppress_errors();
+			// Suppress errors on first attempt when the table does not exist, to avoid polluting the log with table creation errors.
+			$attempt || $suppress = $wpdb->suppress_errors();
 
 			$acquired = $wpdb->query(
 				$wpdb->prepare(
@@ -108,35 +119,37 @@ class WP_Lock_WPDB implements WP_Lock_Backend {
 					$level,
 					getmypid(),
 					$wpdb->get_var( "SELECT CONNECTION_ID()" ),
+					$expiration ? $expiration + time() : 0,
 					$this->get_lock_key( $id )
 				)
 			);
+			$db_error = $wpdb->last_error;
+
 			// Stop suppressing errors after first attempt.
-			$attempt || $wpdb->suppress_errors( false );
+			$attempt || $wpdb->suppress_errors( $suppress );
 
-			if ( false === $acquired && ! $attempt ++ ) {
+			if ( $wpdb->last_error && ! $attempt ++ ) {
 				// Maybe tables are not installed yet?
-				$this->install();
+				self::install();
 			}
-		} while ( false === $acquired && 2 > $attempt );
 
-		if ( false === $acquired ) {
-			throw new Exception( "Database refused inserting new lock with the words: [{$wpdb->last_error}]" );
-		}
+		} while ( $db_error );
 
 		// Acquiring is ok, return true.
 		if ( $acquired ) {
 			$this->lock_ids[ $this->get_lock_key( $id ) ] = $wpdb->insert_id;
 
-			return !! $acquired;
+			return ( bool ) $acquired;
 		}
 
 		if ( ! $blocking ) {
 			return false;
 		}
 
+		// Maybe there are some ghost locks?
 		$this->drop_ghosts( $id );
 
+		// Spinlock.
 		usleep( 5000 );
 
 		return $this->acquire( $id, $level, $blocking, $expiration );
@@ -162,20 +175,20 @@ class WP_Lock_WPDB implements WP_Lock_Backend {
 		return true;
 	}
 
-	private function install() {
+	static function install() {
 		Database::install_table(
 			self::TABLE_NAME,
-			"
-                `id`            INT(10)     UNSIGNED NOT NULL AUTO_INCREMENT,
-                `key`           VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+                "`id`            INT(10)     UNSIGNED NOT NULL AUTO_INCREMENT,
+                `lock_key`      VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	            `original_key`  VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
                 `level`         SMALLINT(5) UNSIGNED NULL DEFAULT NULL,
                 `pid`           INT(10)     UNSIGNED NULL DEFAULT NULL,
                 `cid`           INT(10)     UNSIGNED NULL DEFAULT NULL,
-                
-                PRIMARY KEY (`id`) USING BTREE,
+                `expire`        INT(10)     UNSIGNED NULL DEFAULT NULL,
+                PRIMARY KEY (id) USING BTREE,
                 INDEX `id` (`id`) USING BTREE,
-                INDEX `level` (`level`) USING BTREE"
+                INDEX `level` (`level`) USING BTREE",
+				['upgrade_method' => 'query']
 		);
 	}
 }
